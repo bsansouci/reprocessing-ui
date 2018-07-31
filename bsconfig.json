@@ -1,4 +1,5 @@
 {
   "name": "reprocessing-ui",
+  "bs-dependencies": ["reprocessing"],
   "sources": "src"
 }
