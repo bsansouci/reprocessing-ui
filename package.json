@@ -1,0 +1,6 @@
+{
+  "name": "reprocessing-ui",
+  "dependencies": {
+    "reprocessing": "schmavery/reprocessing"
+  }
+}
