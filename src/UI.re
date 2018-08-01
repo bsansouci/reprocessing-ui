@@ -34,15 +34,21 @@ let opacity = (alpha, env) =>
     )
   );
 
-let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
+let drawCheckbox = (~checkbox, ~text="", ~pos as (x, y) as pos, env) => {
   open Reprocessing;
   let size = 28;
 
   let (mx, my) = Env.mouse(env);
   let pressDown = Env.mousePressed(env);
 
-  let withinBounds = mx > x && mx < x + size && my > y && my < y + size;
+  let textWidth = Draw.textWidth(~body=text, env);
+  let withinBounds =
+    mx > x && mx < x + size + textWidth && my > y && my < y + size;
   let clicked = checkbox.prevPressDown && ! pressDown && withinBounds;
+
+  if (text != "") {
+    Draw.text(~body=text, ~pos=(x + size + 12, y), env);
+  };
 
   switch (clicked, checkbox.animationState) {
   | (true, CheckedToUnchecked) => {

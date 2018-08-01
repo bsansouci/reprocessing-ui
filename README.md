@@ -4,7 +4,18 @@ Simple UI elements for reprocessing because we all need simple UI elements for e
 Example project using this: [https://bsansouci.github.io/fft.re](https://bsansouci.github.io/fft.re)
 
 ### checkbox
-Simply make one and put it in your state, then call `drawCheckbox` with the checkbox and the position.
+```reason
+let makeCheckbox = (~checked=false : bool, env : Reprocessing.glEnvT) => UI.checkboxT;
+
+let drawCheckbox = (
+  ~checkbox : UI.checkboxT, 
+  ~text="" : string, 
+  ~pos : (int, int), 
+  env : Reprocessing.glEnvT
+) => UI.checkboxT;
+```
+
+Simply make one and put it in your state, then call `drawCheckbox`. The checkbox draw its own text to its side because it handles clicks on the text automatically.
 
 ```reason
 type stateT = {
@@ -18,12 +29,15 @@ let setup = env => {
 let draw = (state, env) => {
   Draw.background(Utils.color(~r=199, ~g=217, ~b=229, ~a=255), env);
   
-  let myCheckbox = UI.drawCheckbox(~checkbox=state.myCheckbox, ~pos=(100, 100), env);
+  let myCheckbox = UI.drawCheckbox(~checkbox=state.myCheckbox, ~text="Click Me!", ~pos=(100, 100), env);
   {...state, myCheckbox}
 };
 
 run(~setup, ~draw, ());
 ```
+
+
+
 
 The `drawCheckbox` function returns the new state of the checkbox, make sure to add it to your state at the end of render.
 
