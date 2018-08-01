@@ -248,3 +248,97 @@ let makeCheckbox = (~checked=false, env) => {
   animationTime: 0.2,
   prevPressDown: false,
 };
+
+type sliderT = {
+  value: float,
+  min: float,
+  max: float,
+  selected: bool,
+  deltaXFromCenter: int,
+  prevPressDown: bool,
+};
+
+let makeSlider = (~defaultValue=50., ~min=0., ~max=100., _env) => {
+  value: defaultValue,
+  min,
+  max,
+  selected: false,
+  deltaXFromCenter: 0,
+  prevPressDown: false,
+};
+
+let drawSlider = (~slider, ~pos as (x, y) as pos, env) => {
+  open Reprocessing;
+
+  let clickPadding = 6;
+  let lineWidth = 4;
+  let length = 300;
+  let lengthf = float_of_int(length);
+  let knobSize = 8;
+  let knobSizef = float_of_int(knobSize);
+
+  let endOfLine =
+    x + int_of_float((slider.value -. slider.min) /. slider.max *. lengthf);
+
+  let (mx, my) = Env.mouse(env);
+  let pressDown = Env.mousePressed(env);
+  let (selected, deltaXFromCenter) =
+    if (pressDown && ! slider.selected) {
+      let deltaX = mx - endOfLine;
+      let deltaY = my - y;
+      let len = sqrt(float_of_int(deltaX * deltaX + deltaY * deltaY));
+
+      (len < knobSizef, deltaX);
+    } else if (pressDown && slider.selected) {
+      (true, slider.deltaXFromCenter);
+    } else {
+      (false, slider.deltaXFromCenter);
+    };
+
+  let withinSliderBounds =
+    mx > x
+    && mx < x
+    + length
+    && my > y
+    - lineWidth
+    / 2
+    - clickPadding
+    && my < y
+    + lineWidth
+    / 2
+    + clickPadding;
+  let endOfLine =
+    if (selected) {
+      mx - deltaXFromCenter;
+    } else if (! pressDown && slider.prevPressDown && withinSliderBounds) {
+      mx;
+    } else {
+      endOfLine;
+    };
+
+  let endOfLine = max(min(endOfLine, x + length), x);
+
+  Draw.strokeWeight(lineWidth, env);
+  Draw.strokeCap(Round, env);
+  Draw.stroke(Utils.color(177, 177, 177, 255), env);
+  Draw.line(~p1=pos, ~p2=(x + length, y), env);
+  Draw.stroke(Utils.color(96, 153, 238, 255), env);
+  Draw.line(~p1=pos, ~p2=(endOfLine, y), env);
+
+  Draw.strokeWeight(1, env);
+  Draw.stroke(Utils.color(177, 177, 177, 255), env);
+  if (selected) {
+    Draw.fill(Utils.color(230, 230, 230, 255), env);
+  } else {
+    Draw.fill(Utils.color(255, 255, 255, 255), env);
+  };
+
+  Draw.ellipse(~center=(endOfLine, y), ~radx=knobSize, ~rady=knobSize, env);
+  {
+    ...slider,
+    selected,
+    deltaXFromCenter,
+    prevPressDown: pressDown,
+    value: float_of_int(endOfLine - x) *. slider.max /. lengthf +. slider.min,
+  };
+};
