@@ -33,6 +33,7 @@ let opacity = (alpha, env) =>
       env,
     )
   );
+
 let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
   open Reprocessing;
   let size = 28;
@@ -42,17 +43,36 @@ let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
 
   let withinBounds = mx > x && mx < x + size && my > y && my < y + size;
   let clicked = checkbox.prevPressDown && ! pressDown && withinBounds;
+
   switch (clicked, checkbox.animationState) {
-  | (true, CheckedToUnchecked)
+  | (true, CheckedToUnchecked) => {
+      ...checkbox,
+      animationState: UncheckedToChecked,
+      prevPressDown: pressDown,
+      checked: true,
+      /* @Incomplete Jump to end of animation for simplicity's sake. Ideally we'd use additive animation
+         which would give a bit of momentum to the animation of the ticking. It's especially useful
+         when syncing the amount ticked to something else. */
+      time: 0.,
+    }
   | (false, CheckedToUnchecked) =>
+    let remapedTime =
+      Utils.remapf(
+        ~value=checkbox.time,
+        ~low1=checkbox.animationTime,
+        ~high1=0.,
+        ~low2=0.,
+        ~high2=1.,
+      );
+
     Draw.image(checkbox.uncheckedImage, ~pos, ~width=size, ~height=size, env);
 
     Draw.pushMatrix(env);
     opacity(
       Utils.remapf(
-        ~value=checkbox.time,
+        ~value=remapedTime,
         ~low1=0.,
-        ~high1=checkbox.animationTime,
+        ~high1=1.,
         ~low2=1.,
         ~high2=0.,
       ),
@@ -60,11 +80,11 @@ let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
     );
     let scale =
       Utils.remapf(
-        ~value=checkbox.time,
+        ~value=remapedTime,
         ~low1=0.,
-        ~high1=checkbox.animationTime,
+        ~high1=1.,
         ~low2=1.,
-        ~high2=0.9,
+        ~high2=0.8,
       );
     let scaledSize = float_of_int(size) /. 2. *. scale;
     Draw.translate(
@@ -84,7 +104,7 @@ let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
     Draw.popMatrix(env);
     opacity(1., env);
 
-    if (checkbox.time >= checkbox.animationTime) {
+    if (checkbox.time <= 0.) {
       {
         ...checkbox,
         animationState: Nothing,
@@ -94,19 +114,36 @@ let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
     } else {
       {
         ...checkbox,
-        time:
-          min(checkbox.time +. Env.deltaTime(env), checkbox.animationTime),
+        time: max(checkbox.time -. Env.deltaTime(env), 0.),
         prevPressDown: pressDown,
       };
     };
-  | (true, UncheckedToChecked)
+  | (true, UncheckedToChecked) => {
+      ...checkbox,
+      animationState: CheckedToUnchecked,
+      prevPressDown: pressDown,
+      checked: false,
+      /* @Incomplete Jump to end of animation for simplicity's sake. Ideally we'd use additive animation
+         which would give a bit of momentum to the animation of the ticking. It's especially useful
+         when syncing the amount ticked to something else. */
+      time: checkbox.animationTime,
+    }
   | (false, UncheckedToChecked) =>
-    Draw.image(checkbox.uncheckedImage, ~pos, ~width=size, ~height=size, env);
-    opacity(
+    let remapedTime =
       Utils.remapf(
         ~value=checkbox.time,
         ~low1=0.,
         ~high1=checkbox.animationTime,
+        ~low2=0.,
+        ~high2=1.,
+      );
+
+    Draw.image(checkbox.uncheckedImage, ~pos, ~width=size, ~height=size, env);
+    opacity(
+      Utils.remapf(
+        ~value=remapedTime,
+        ~low1=0.,
+        ~high1=1.,
         ~low2=0.,
         ~high2=1.,
       ),
@@ -115,9 +152,9 @@ let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
     Draw.pushMatrix(env);
     let scale =
       Utils.remapf(
-        ~value=checkbox.time,
+        ~value=remapedTime,
         ~low1=0.,
-        ~high1=checkbox.animationTime,
+        ~high1=1.,
         ~low2=0.8,
         ~high2=1.,
       );
@@ -143,7 +180,7 @@ let drawCheckbox = (~checkbox, ~pos as (x, y) as pos, env) => {
       {
         ...checkbox,
         animationState: Nothing,
-        time: 0.,
+        time: checkbox.animationTime,
         prevPressDown: pressDown,
       };
     } else {
