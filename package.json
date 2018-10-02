@@ -1,6 +1,9 @@
 {
   "name": "reprocessing-ui",
   "dependencies": {
-    "reprocessing": "schmavery/reprocessing"
+    "reprocessing": "0.2.0"
+  },
+  "devDependencies": {
+    "bsb-native": "4.0.6"
   }
 }
